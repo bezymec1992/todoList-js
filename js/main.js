@@ -2,7 +2,15 @@ const form = document.querySelector("#form");
 const taskInput = document.querySelector("#taskInput");
 const tasksList = document.querySelector("#tasksList");
 const emptyList = document.querySelector("#emptyList");
+let currentTime;
+let tasks = [];
 
+if (localStorage.getItem('tasks')) {
+  tasks = JSON.parse(localStorage.getItem('tasks'))
+  tasks.forEach((task) => renderTask(task))
+}
+
+checkEmptyList();
 form.addEventListener("submit", addTask);
 tasksList.addEventListener("click", deleteTask);
 tasksList.addEventListener("click", doneTask);
@@ -10,8 +18,74 @@ tasksList.addEventListener("click", doneTask);
 function addTask(e) {
   e.preventDefault();
   const taskText = taskInput.value;
-  const taskHTML = `<li class="list-group-item d-flex justify-content-between task-item">
-					<span class="task-title">${taskText}</span>
+  const newTask = {
+    id: Date.now(),
+    text: taskText,
+    time: currentTime,
+    done: false,
+  }
+
+  tasks.push(newTask);
+
+  saveToLocalStorage();
+
+  renderTask(newTask);
+
+  taskInput.value = "";
+  taskInput.focus();
+
+  checkEmptyList();
+}
+
+function deleteTask(e) {
+  if (e.target.dataset.action !== "delete") return;
+  const parentNode = e.target.closest(".list-group-item");
+  const id = Number(parentNode.id);
+  const index = tasks.findIndex((task) => task.id === id);
+  tasks.splice(index, 1)
+  parentNode.remove();
+
+  saveToLocalStorage();
+  checkEmptyList();
+}
+
+function doneTask(e) {
+  if (e.target.dataset.action !== "done") return;
+
+  const parentNode = e.target.closest(".list-group-item");
+  const id = Number(parentNode.id);
+  const task = tasks.find((task) => task.id === id);
+  task.done = !task.done
+  const taskTitle = parentNode.querySelector(".task-title");
+  taskTitle.classList.toggle("task-title--done");
+
+  saveToLocalStorage();
+}
+
+function checkEmptyList() {
+  if (tasks.length === 0) {
+    const emptyListHtml = `<li id="emptyList" class="list-group-item empty-list">
+    <img src="./img/leaf.svg" alt="Empty" width="48" class="mt-3" />
+    <div class="empty-list__title">Список дел пуст</div>
+  </li>`;
+  tasksList.insertAdjacentHTML('afterbegin', emptyListHtml);
+  }
+  if (tasks.length > 0) {
+    const emptyListEl = document.querySelector('#emptyList');
+    emptyListEl ? emptyListEl.remove() : null;
+  }
+}
+
+function saveToLocalStorage() {
+  localStorage.setItem('tasks', JSON.stringify(tasks))
+}
+
+function renderTask(task) {
+  const cssClass = task.done ? "task-title task-title--done" : 'task-title';
+
+  const taskHTML = `<li id="${task.id}"class="list-group-item d-flex justify-content-between task-item">
+					<span class="${cssClass}">${task.text}</span>
+          <span class="time">${task.time}</span>
 					<div class="task-item__buttons">
 						<button type="button" data-action="done" class="btn-action">
 							<img src="./img/tick.svg" alt="Done" width="18" height="18">
@@ -21,33 +95,40 @@ function addTask(e) {
 						</button>
 					</div>
 				</li>`;
-
-  console.log(taskHTML);
   tasksList.insertAdjacentHTML("afterbegin", taskHTML);
+}
 
-  taskInput.value = "";
-  taskInput.focus();
+function getTimes () {
+  const d = new Date();
 
-  if (tasksList.children.length > 1) {
-    emptyList.classList.add("none");
+  function addZero(i) {
+    if (i < 10) {
+      i = "0" + i;
+    }
+    return i;
   }
+  let h = addZero(d.getHours());
+  let m = addZero(d.getMinutes());
+  let day = addZero(d.getDate());
+  
+  const month = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  
+  let name = month[d.getMonth()];
+  
+  currentTime = day + " " + name + " " + h + ":" + m;
 }
+getTimes()
 
-function deleteTask(e) {
-  if (e.target.dataset.action !== "delete") return;
-
-  const parentNode = e.target.closest(".list-group-item");
-  parentNode.remove();
-
-  if (tasksList.children.length === 1) {
-    emptyList.classList.remove("none");
-  }
-}
-
-function doneTask(e) {
-  if (e.target.dataset.action !== "done") return;
-
-  const parentNode = e.target.closest(".list-group-item");
-  const taskTitle = parentNode.querySelector(".task-title");
-  taskTitle.classList.toggle("task-title--done");
-}
