@@ -2,8 +2,8 @@ const form = document.querySelector("#form");
 const taskInput = document.querySelector("#taskInput");
 const tasksList = document.querySelector("#tasksList");
 const emptyList = document.querySelector("#emptyList");
-let currentTime;
 let tasks = [];
+let currentTime;
 
 if (localStorage.getItem('tasks')) {
   tasks = JSON.parse(localStorage.getItem('tasks'))
@@ -18,13 +18,14 @@ tasksList.addEventListener("click", doneTask);
 function addTask(e) {
   e.preventDefault();
   const taskText = taskInput.value;
+  getTimes()
   const newTask = {
     id: Date.now(),
     text: taskText,
     time: currentTime,
     done: false,
   }
-
+  
   tasks.push(newTask);
 
   saveToLocalStorage();
@@ -82,7 +83,6 @@ function saveToLocalStorage() {
 
 function renderTask(task) {
   const cssClass = task.done ? "task-title task-title--done" : 'task-title';
-
   const taskHTML = `<li id="${task.id}"class="list-group-item d-flex justify-content-between task-item">
 					<span class="${cssClass}">${task.text}</span>
           <span class="time">${task.time}</span>
@@ -98,37 +98,6 @@ function renderTask(task) {
   tasksList.insertAdjacentHTML("afterbegin", taskHTML);
 }
 
-function getTimes () {
-  const d = new Date();
-
-  function addZero(i) {
-    if (i < 10) {
-      i = "0" + i;
-    }
-    return i;
-  }
-  let h = addZero(d.getHours());
-  let m = addZero(d.getMinutes());
-  let day = addZero(d.getDate());
-  
-  const month = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  
-  let name = month[d.getMonth()];
-  
-  currentTime = day + " " + name + " " + h + ":" + m;
+function getTimes () {  
+  currentTime = new Date().toLocaleDateString('en-us', {month:"short", year:"numeric",  hour:"numeric", minute:"numeric", day:"numeric"});
 }
-getTimes()
-
